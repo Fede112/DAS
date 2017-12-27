@@ -1,12 +1,12 @@
 # DAS
-DAS related programs
+Programa de adquisición DAS y scripts para el procesamiento de los datos, tanto STD como crudo.
 
-
-## Buenas Practicas en los Commits (lo robe de la primer pagina que encontre)
-[Guia comments](https://codigofacilito.com/articulos/buenas-practicas-en-commits-de-git)
-
+## Buenas Practicas en los Commits
+[Guia Commits](https://codigofacilito.com/articulos/buenas-practicas-en-commits-de-git)
+(lo robe de la primer pagina que encontre, no sé si es la mejor manera)
 
 ## Tags de los commits:
+
 - feat: Una nueva caracteristica.
 
 - fix: Se soluciono un bug.
