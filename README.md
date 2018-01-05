@@ -8,12 +8,12 @@ Programa de adquisición DAS (falta subirlo) y scripts para el procesamiento de 
 
 ## Scripts para el procesamiento de los datos <a name="scripts"></a>
 
-Los Scripts para el procesamiento de los datos generados por el sensor DAS son tres:
+Los Scripts para el procesamiento de los datos generados por el equipo DAS son tres:
 1. funciones4.py
 2. funciones_das.py
 3. corre_funciones_das.py
 
-Para generar las figuras/pelicula se necesita copiar los tres archivos donde están todas las carpetas con los datos, nombradas según el día en el que se inició la adquisición (Ej. '17_22_11_12_04_36').
+Para generar las figuras/pelicula se necesita copiar los tres archivos en el mismo directorio donde están las carpetas con datos. Las carpetas están nombradas según el día en el que se inició la adquisición (Ej. '17_22_11_12_04_36').
 
 Los scripts se corren individualmente desde corre_funciones_das.py.
 
