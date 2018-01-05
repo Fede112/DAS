@@ -23,12 +23,12 @@ parametros['c_f'] = parametros['c'] / parametros['n']
 parametros['offset_m'] = 0
 parametros['FrecLaser'] = 2000
 parametros['zoom_i_m'] = 5300
-parametros['zoom_f_m'] = 5600
+parametros['zoom_f_m'] = 5900
 parametros['c_axis_min'] = 0
 parametros['c_axis_max'] = 0.08
-parametros['punzados_m'] = np.array([])
-parametros['colores_m'] = []
-parametros['titulo_str'] = 'Villa Mercedes'
+parametros['punzados_m'] = np.array([])  # np.array([3800,3795,3689,3665,3580,3565,3499,3478,3462,3425,3411])
+parametros['colores_m'] = []  # ['r','r','g','g','k','k','r','r','r','c','c']
+parametros['titulo_str'] = 'Retro a 4 m de la traza'
 parametros['tiempo_ini'] = '2017-11-30 11:12:30'
 parametros['tiempo_fin'] = '2017-11-30 11:13:30'
 parametros['window_time_data'] = 20
@@ -53,6 +53,7 @@ std, data_fft_tot, pos_bin_std, tiempo_filas_std, frq, pos_bin_fft, = procesa_st
 
 ##########################
 # carga_std: carga los datos de la std en una matriz[filas=tiempo, col=bines].
+# Verificar FrecLaser, tiempo_ini y tiempo_fin
 from funciones_das import carga_std
 from funciones4 import header_read
 from funciones4 import data_read
@@ -76,7 +77,7 @@ parametros['c_axis_max'] = 0.2
 parametros['zoom_i_m'] = 0
 parametros['zoom_f_m'] = 13000
 parametros['marcadores_m'] = np.array([1000, 2000, 3000])
-parametros['marcadores_texto'] = []
+parametros['marcadores_texto'] = ['V1', 'V2', 'V3']
 parametros['marcadores_waterfall'] = 'no'
 parametros['marcadores_color'] = ['r', 'r', 'r']
 parametros['titulo_str'] = 'Oleoducto Restinga'
@@ -90,6 +91,9 @@ matriz, tiempo_filas_std, pos_bin, = carga_std(parametros)
 
 
 ###########################
+# peli_std: genera una pelicula del waterfall con los datos de la STD.
+# Verificar FrecLaser.
+
 from funciones_das import peli_std
 from funciones4 import header_read
 from funciones4 import data_read
@@ -102,11 +106,12 @@ parametros['time_str'] = '17_22_11_12_04_36'
 nombre_header = os.path.join(parametros['time_str'], 'STD', 'std.hdr')
 nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')
 header = header_read(nombre_header, nombre_archivo)
-parametros['output_movie'] = os.path.join(parametros['time_str'], 'STD', 'peli1232.mp4')
+parametros['carpeta'] = ''
+parametros['output_movie'] = os.path.join(parametros['carpeta'], parametros['time_str'], 'STD', 'peli2.mp4')
 parametros['c'] = 299792458.
 parametros['n'] = 1.46879964
-parametros['offset_m'] = -187
-parametros['FrecLaser'] = 10002.2
+parametros['offset_m'] = -0
+parametros['FrecLaser'] = 5000
 parametros['FilasPeli'] = 2000
 parametros['StepPeli'] = 50
 parametros['c_f'] = parametros['c'] / parametros['n']
@@ -115,12 +120,12 @@ parametros['vector_norm'] = np.ones(int(header['Cols']))
 parametros['titulo_str'] = '%02d' % (1)
 parametros['texto1'] = ''
 parametros['texto2'] = ''
-parametros['ini_file'] = 0
+parametros['ini_file'] = 000000
 parametros['fin_file'] = []
 parametros['c_axis_min'] = 0
 parametros['c_axis_max'] = 0.08
 parametros['zoom_i_m'] = 0
-parametros['zoom_f_m'] = 13000
+parametros['zoom_f_m'] = 3000
 parametros['marcadores_m'] = np.array([1000, 2000, 3000])
 parametros['marcadores_texto'] = ['V1', 'V2', 'V3']
 parametros['marcadores_waterfall'] = 'no'

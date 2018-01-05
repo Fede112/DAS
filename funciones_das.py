@@ -71,7 +71,7 @@ def peli_std(parametros):
     vector_offset: array de numpy con el offset para la std de tamaño igual al número de columnas de la STD. 
     vector_norm:  array de numpy con la normalización para la std de tamaño igual al número de columnas de la STD. 
     ini_file: número de inicio de archivo .std para la pelicula
-    fin_file: número final de archivo .std para la pelicula. Si es vacío ([]) se hace hasta el último archivo .std
+    fin_file: número final de archivo .std para la pelicula. Si es vacío ([]) se hace hasta el último archivo .std.
     guarda_figuras: 'si' o 'no'
     carpeta_figuras: Carpeta que se crea dentro de la carpeta STD donde se guardan la figuras. Si la carpeta no existe, se crea.
     output_movie: path donde se guarda el video. El nombre del video debe tener la extensión .mp4
@@ -82,45 +82,47 @@ def peli_std(parametros):
 
     Example
     -------
-    from funciones_das import peli_std_2
+    from funciones_das import peli_std
     from funciones4 import header_read
     from funciones4 import data_read
     import numpy as np
+    import os
 
 
     parametros = {}
-    parametros['time_str'] = '17_30_11_10_59_49'
-    nombre_header = parametros['time_str'] + '\\STD\\std.hdr'
-    nombre_archivo = parametros['time_str'] + '\\STD\\000000.std'
-    header = header_read(nombre_header,nombre_archivo)  
+    parametros['time_str'] = '17_22_11_12_04_36'
+    nombre_header = os.path.join(parametros['time_str'], 'STD', 'std.hdr')
+    nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')
+    header = header_read(nombre_header, nombre_archivo)
     parametros['carpeta'] = ''
-    parametros['output_movie'] = parametros['carpeta'] + parametros['time_str'] + '//STD//' + 'peli1.mp4'
+    parametros['output_movie'] = os.path.join(parametros['carpeta'], parametros['time_str'], 'STD', 'peli2.mp4')
     parametros['c'] = 299792458.
     parametros['n'] = 1.46879964
-    parametros['offset_m'] = -187         
-    parametros['FrecLaser'] = 10002.2
-    parametros['FilasPeli'] = 2000         
-    parametros['StepPeli'] = 50         
-    parametros['c_f'] = parametros['c']/parametros['n'] 
+    parametros['offset_m'] = -0
+    parametros['FrecLaser'] = 5000
+    parametros['FilasPeli'] = 2000
+    parametros['StepPeli'] = 50
+    parametros['c_f'] = parametros['c'] / parametros['n']
     parametros['vector_offset'] = np.zeros(int(header['Cols']))
     parametros['vector_norm'] = np.ones(int(header['Cols']))
-    parametros['titulo_str'] = '%02d' % (1) 
-    parametros['texto1'] = '' 
-    parametros['texto2'] = '' 
-    parametros['ini_file'] = 0
+    parametros['titulo_str'] = '%02d' % (1)
+    parametros['texto1'] = ''
+    parametros['texto2'] = ''
+    parametros['ini_file'] = 000000
     parametros['fin_file'] = []
     parametros['c_axis_min'] = 0
     parametros['c_axis_max'] = 0.08
-    parametros['zoom_i_m'] = 5300
-    parametros['zoom_f_m'] = 5600
-    parametros['marcadores_m'] = np.array([3800,3795,3689])
+    parametros['zoom_i_m'] = 0
+    parametros['zoom_f_m'] = 13000
+    parametros['marcadores_m'] = np.array([1000, 2000, 3000])
     parametros['marcadores_texto'] = ['V1', 'V2', 'V3']
-    parametros['marcadores_waterfall'] = 'si'
-    parametros['marcadores_color'] = ['r','g, 'b']
+    parametros['marcadores_waterfall'] = 'no'
+    parametros['marcadores_color'] = ['r', 'r', 'r']
     parametros['guarda_figuras'] = 'no'
     parametros['carpeta_figuras'] = 'Figuras'
 
     peli_std(parametros)
+
 
     '''
 
@@ -203,17 +205,17 @@ def peli_std(parametros):
     def updatefig(j, offset_m, tiempo_actual):
         global pl1, pl2
 
-        ind_path = ini_file + j * step / filas_0
-        ind_path_str = '%06d' % (ind_path)
+        ind_path = ini_file + j * step / filas_0  # numero del archivo
+        ind_path_str = '%06d' % (ind_path)  # lo pasa a string
         path = os.path.join(time_str, 'STD', ind_path_str + '.std')
 
-        inicio = (j) * step % filas_0
-        vec_fils = np.array([inicio, inicio + step - 1], dtype=np.uint64)
+        inicio = (j) * step % filas_0  # indice de la primer fila a leer en cada iteración
+        vec_fils = np.array([inicio, inicio + step - 1], dtype=np.uint64)  # define el rango de filas a leer (lee el # de filas determinado en 'step')
 
-        header, vector = data_read(header_path, path, vec_fils, vec_cols)
+        header, vector = data_read(header_path, path, vec_fils, vec_cols)  # lee los datos y los recupera en el vector 2d
 
         for k in range(step):
-            vector[k, :] = (vector[k, :] - vector_offset) * vector_norm
+            vector[k, :] = (vector[k, :] - vector_offset) * vector_norm  # le resta el offset y le agrega una normalización
 
         f = j % (filas / step)
 
@@ -221,7 +223,7 @@ def peli_std(parametros):
         if (f == 0):
             data = np.zeros((filas, columnas), dtype=eval(header['PythonNpDataType']))
 
-        data[f * step:(f + 1) * step:] = vector
+        data[f * step:(f + 1) * step:] = vector  # va sumandole a data las filas (# = step) obtenidas en cada iteración
         root.data = data
 
         # Actualización del Subplot Waterfall
@@ -243,7 +245,7 @@ def peli_std(parametros):
 
         promedio = root.promedio
 
-        actual = np.mean(vector, 0)
+        actual = np.mean(vector, axis=0)
         promedio = (promedio * (j - 1) + actual) / j
 
         root.promedio = promedio
@@ -251,15 +253,16 @@ def peli_std(parametros):
         # Actualización del Subplot de los Promedios
         ax1.cla()
         pl1 = ax1.plot(promedio)
-        pl1 = ax1.plot(actual, 'r')
-        ax1.set_xlim([zoom_i, zoom_f])
-        ax1.set_ylim([c_axis_min, c_axis_max])
-        if len(marcadores_texto == 0):
+        pl2 = ax1.plot(actual, 'r')
+        if len(marcadores_texto) == 0:
             ax1.xaxis.set_ticklabels([0] * len(marcadores_bin))
         else:
             ax1.xaxis.set_ticklabels(marcadores_texto)
         ax1.xaxis.set_ticks(marcadores_bin)
         ax1.xaxis.set_ticks_position('top')
+
+        ax1.set_xlim([zoom_i, zoom_f])
+        ax1.set_ylim([c_axis_min, c_axis_max])
 
         # Grafico lineas verticales en ambos subplots
         for k in range(marcadores_bin.shape[0]):
@@ -358,8 +361,8 @@ def peli_std(parametros):
 
     ani = animation.FuncAnimation(fig, updatefig, interval=0.2, blit=False, fargs=(offset_m, tiempo_actual), frames=frames_tot, repeat=False)
     ani.save(output_movie, writer=writer, dpi=250)
-    plt.show()
-    Tk.mainloop()
+    # plt.show()
+    # Tk.mainloop()
 
 
 def carga_std(parametros):
@@ -401,40 +404,43 @@ def carga_std(parametros):
 
     Example
     -------
+    # Verificar FrecLaser, tiempo_ini y tiempo_fin
     from funciones_das import carga_std
     from funciones4 import header_read
     from funciones4 import data_read
     import numpy as np
-
+    import os
 
     parametros = {}
-    parametros['time_str'] = '17_30_11_10_59_49'
-    nombre_header = parametros['time_str'] + '\\STD\\std.hdr'
-    nombre_archivo = parametros['time_str'] + '\\STD\\000000.std'
-    header = header_read(nombre_header,nombre_archivo)
+    parametros['time_str'] = '17_22_11_12_04_36'
+    nombre_header = os.path.join(parametros['time_str'], 'STD', 'std.hdr')
+    nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')
+    header = header_read(nombre_header, nombre_archivo)
     parametros['c'] = 299792458.
     parametros['n'] = 1.46879964
     parametros['offset_m'] = 0
-    parametros['FrecLaser'] = 2000
-    parametros['c_f'] = parametros['c']/parametros['n']
+    parametros['FrecLaser'] = 5000
+    parametros['c_f'] = parametros['c'] / parametros['n']
     parametros['vector_offset'] = np.zeros(int(header['Cols']))
     parametros['vector_norm'] = np.ones(int(header['Cols']))
     parametros['c_axis_min'] = 0
-    parametros['c_axis_max'] = 0.08
-    parametros['zoom_i_m'] = 5300
-    parametros['zoom_f_m'] = 5600
-    parametros['marcadores_m'] = np.array([3800,3795,3689])
+    parametros['c_axis_max'] = 0.2
+    parametros['zoom_i_m'] = 0
+    parametros['zoom_f_m'] = 13000
+    parametros['marcadores_m'] = np.array([1000, 2000, 3000])
     parametros['marcadores_texto'] = ['V1', 'V2', 'V3']
-    parametros['marcadores_waterfall'] = 'si'
-    parametros['marcadores_color'] = ['r','g, 'b']
-    parametros['titulo_str'] = 'Retro a 4 m de la traza'
-    parametros['tiempo_ini'] = '2017-11-30 11:12:30'
-    parametros['tiempo_fin'] = '2017-11-30 11:13:00'
+    parametros['marcadores_waterfall'] = 'no'
+    parametros['marcadores_color'] = ['r', 'r', 'r']
+    parametros['titulo_str'] = 'Oleoducto Restinga'
+    parametros['tiempo_ini'] = '2017-11-22 12:40:00'
+    parametros['tiempo_fin'] = '2017-11-22 12:50:00'
     parametros['guarda_figuras'] = 'si'
     parametros['carpeta_figuras'] = 'Figuras'
     parametros['num_figura'] = 1
 
-    matriz, tiempo_filas_std, pos_bin,  = carga_std(parametros)
+    matriz, tiempo_filas_std, pos_bin, = carga_std(parametros)
+
+
 
     '''
 
@@ -581,14 +587,15 @@ def carga_std(parametros):
     # Subplot Promedio Superior
     ax1 = fig.add_axes([.15, .76, .64, .15])
     ax1.plot(promedio)
-    ax1.set_xlim([zoom_i, zoom_f])
-    ax1.set_ylim([c_axis_min, c_axis_max])
     if (len(marcadores_texto) == 0):
         ax1.xaxis.set_ticklabels([] * len(marcadores_bin))
     else:
         ax1.xaxis.set_ticklabels(marcadores_texto)
     ax1.xaxis.set_ticks(marcadores_bin)
     ax1.xaxis.set_ticks_position('top')
+
+    ax1.set_xlim([zoom_i, zoom_f])
+    ax1.set_ylim([c_axis_min, c_axis_max])
 
     # Grafico lineas verticales en ambos subplots
     for k in range(marcadores_bin.shape[0]):
@@ -602,9 +609,9 @@ def carga_std(parametros):
 
     if guarda_figuras == 'si':
         figname = "figura_" + inttostr + '.png'
-        print figname
+        # print figname
         figpath = os.path.join(direfig, figname)
-        print figpath
+        # print figpath
         fig.savefig(figpath, dpi=300)
 
     # Posicion de los bines
@@ -617,6 +624,8 @@ def carga_std(parametros):
     for i in range(filas_tot):
         tt = tiempo_inii + datetime.timedelta(seconds=i * header['nShotsChk'] / FrecLaser)
         tiempo_filas_std.append(tt)
+
+    # plt.show()
 
     return matriz, tiempo_filas_std, pos_bin,
 
@@ -699,19 +708,19 @@ def procesa_std_fft(parametros):
     import numpy as np
 
 
-    param parametros = {}
+    parametros = {}
     parametros['time_str'] = '17_30_11_10_59_49'
     parametros['c'] = 299792458.
     parametros['n'] = 1.46879964
-    parametros['c_f'] = parametros['c']/parametros['n']
+    parametros['c_f'] = parametros['c'] / parametros['n']
     parametros['offset_m'] = 0
     parametros['FrecLaser'] = 2000
     parametros['zoom_i_m'] = 5300
     parametros['zoom_f_m'] = 5900
     parametros['c_axis_min'] = 0
     parametros['c_axis_max'] = 0.08
-    parametros['punzados_m'] = np.array([]) #np.array([3800,3795,3689,3665,3580,3565,3499,3478,3462,3425,3411])
-    parametros['colores_m'] = []#['r','r','g','g','k','k','r','r','r','c','c']
+    parametros['punzados_m'] = np.array([])  # np.array([3800,3795,3689,3665,3580,3565,3499,3478,3462,3425,3411])
+    parametros['colores_m'] = []  # ['r','r','g','g','k','k','r','r','r','c','c']
     parametros['titulo_str'] = 'Retro a 4 m de la traza'
     parametros['tiempo_ini'] = '2017-11-30 11:12:30'
     parametros['tiempo_fin'] = '2017-11-30 11:13:30'
@@ -728,11 +737,12 @@ def procesa_std_fft(parametros):
     parametros['c_axis_min_fft'] = 0
     parametros['c_axis_max_fft'] = 10000
     parametros['titulo_str_fft'] = 'FFT de retro a 4 m de la traza'
-    parametros['guarda_figuras'] = 'no'
+    parametros['guarda_figuras'] = 'si'
     parametros['carpeta_figuras'] = 'Figuras'
     parametros['num_figura'] = 1
 
-    std, data_fft_tot, pos_bin_std, tiempo_filas_std, frq, pos_bin_fft,= procesa_std_fft(parametros)
+    std, data_fft_tot, pos_bin_std, tiempo_filas_std, frq, pos_bin_fft, = procesa_std_fft(parametros)
+
 
     '''
 
@@ -902,7 +912,7 @@ def procesa_std_fft(parametros):
     # Guarda figura
     inttostr = '%05d' % (num_figura)
     if guarda_figuras == 'si':
-        figname = os.path.join(direfig, 'figura_', inttostr, '_std.png')
+        figname = os.path.join(direfig, 'figura_' + inttostr + '_std.png')
         fig.savefig(figname, dpi=300)
 
     # Posicion de los bines std
@@ -946,8 +956,8 @@ def procesa_std_fft(parametros):
     fig2.colorbar(im)
     im.set_clim([c_axis_min_fft, c_axis_max_fft])
     ticks = ax2.get_xticks()
-    ax2.text(1.02, 1.35, titulo_str_fft, horizontalalignment='left', transform=ax.transAxes, color='k')
-    tiempo_label = ax2.text(1.02, 1.1, 'T:' + tiempo_ini, horizontalalignment='left', transform=ax.transAxes, color='k')
+    ax2.text(1.02, 1.35, titulo_str_fft, horizontalalignment='left', transform=ax2.transAxes, color='k')
+    tiempo_label = ax2.text(1.02, 1.1, 'T:' + tiempo_ini, horizontalalignment='left', transform=ax2.transAxes, color='k')
     ax2.set_xticklabels(np.round(ticks * delta_x + vec_cols[0] * delta_x + float(offset_m)))
     ax2.set_ylim(0, data_fft_tot.shape[0])
     ticks = ax2.get_yticks()
@@ -974,7 +984,7 @@ def procesa_std_fft(parametros):
     # Guarda figura
     inttostr = '%05d' % (num_figura)
     if guarda_figuras == 'si':
-        figname = os.path.join(direfig, 'figura', inttostr, '_fft.png')
+        figname = os.path.join(direfig, 'figura' + inttostr + '_fft.png')
         fig2.savefig(figname, dpi=300)
 
     return std, data_fft_tot, pos_bin_std, tiempo_filas_std, frq, pos_bin_fft,
