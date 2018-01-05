@@ -1,11 +1,36 @@
 # DAS
-Programa de adquisición DAS y scripts para el procesamiento de los datos, tanto STD como crudo.
+Programa de adquisición DAS (falta subirlo) y scripts para el procesamiento de los datos, tanto STD como crudo.
+
+## Scripts para el procesamiento de los datos
+
+Los Scripts para el procesamiento de los datos generados por DAS son tres:
+1. funciones4.py
+2. funciones_das.py
+3. corre_funciones_das.py
+
+### funciones4.py
+
+Funciones4.py tiene las funciones basicas para levantar los datos generados por el DAS. Las columnas son los bines y las filas son los datos en función del tiempo para cada bin.
+
+### funciones_das.py
+
+Son las funciones que procesan los datos. Hasta el momento son:
+- procesa_std_fft: genera la fft y la std a partir del dato crudo.
+- carga_std: genera la figura a partir de los datos std.
+- peli_std: genera una pelicula a partir de los datos std.
+
+### corre_funciones_das.py
+
+Son los scripts que hay que correr individualmente para generar tanto la pelicula de los datos STD, las figuras STD y el procesamiento del dato crudo.
+
+
+
 
 ## Buenas Practicas en los Commits
 [Guia Commits](https://codigofacilito.com/articulos/buenas-practicas-en-commits-de-git)
 (lo robe de la primer pagina que encontre, no sé si es la mejor manera)
 
-## Tags de los commits:
+### Tags de los commits:
 
 - feat: Una nueva caracteristica.
 
@@ -22,7 +47,7 @@ Programa de adquisición DAS y scripts para el procesamiento de los datos, tanto
 - chore: Actualizacion de tareas de build, configuracion del admin. de paquetes; Sin cambios en el codigo.
 
 
-## Ejemplo de como comentar funciones
+### Ejemplo de como comentar funciones
 ```python
 def sqrt(x):
     """
