@@ -1,16 +1,25 @@
 # DAS
 Programa de adquisición DAS (falta subirlo) y scripts para el procesamiento de los datos, tanto STD como crudo.
 
-## Scripts para el procesamiento de los datos
+## Table of contents
+* [Scripts para el procesamiento de los datos](#scripts)
+* [Buenas Prácticas para contribuir al GIT](#buenaspracticas)
 
-Los Scripts para el procesamiento de los datos generados por DAS son tres:
+
+## Scripts para el procesamiento de los datos <a name="scripts"></a>
+
+Los Scripts para el procesamiento de los datos generados por el sensor DAS son tres:
 1. funciones4.py
 2. funciones_das.py
 3. corre_funciones_das.py
 
+Para generar las figuras/pelicula se necesita copiar los tres archivos donde están todas las carpetas con los datos, nombradas según el día en el que se inició la adquisición (Ej. '17_22_11_12_04_36').
+
+Los scripts se corren individualmente desde corre_funciones_das.py.
+
 ### funciones4.py
 
-Funciones4.py tiene las funciones basicas para levantar los datos generados por el DAS. Las columnas son los bines y las filas son los datos en función del tiempo para cada bin.
+Contiene las funciones básicas para levantar los datos generados por el DAS. Las columnas son los bines y las filas son los datos en función del tiempo para cada bin.
 
 ### funciones_das.py
 
@@ -26,11 +35,13 @@ Son los scripts que hay que correr individualmente para generar tanto la pelicul
 
 
 
-## Buenas Practicas en los Commits
+## Buenas Prácticas para contribuir al GIT  <a name="buenaspracticas"></a>
+
+### Como realizar los commits
 [Guia Commits](https://codigofacilito.com/articulos/buenas-practicas-en-commits-de-git)
 (lo robe de la primer pagina que encontre, no sé si es la mejor manera)
 
-### Tags de los commits:
+#### Tags de los commits:
 
 - feat: Una nueva caracteristica.
 
