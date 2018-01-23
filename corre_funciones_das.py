@@ -102,7 +102,7 @@ import os
 
 
 parametros = {}
-parametros['time_str'] = '17_22_11_12_04_36'
+parametros['time_str'] = '17_17_11_15_29_20'
 nombre_header = os.path.join(parametros['time_str'], 'STD', 'std.hdr')
 nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')
 header = header_read(nombre_header, nombre_archivo)
@@ -111,21 +111,21 @@ parametros['output_movie'] = os.path.join(parametros['carpeta'], parametros['tim
 parametros['c'] = 299792458.
 parametros['n'] = 1.46879964
 parametros['offset_m'] = -0
-parametros['FrecLaser'] = 5000
+parametros['FrecLaser'] = 2000
 parametros['FilasPeli'] = 2000
-parametros['StepPeli'] = 50
+parametros['StepPeli'] = 50  # si lo bajaba a 15 se cortaba
 parametros['c_f'] = parametros['c'] / parametros['n']
 parametros['vector_offset'] = np.zeros(int(header['Cols']))
 parametros['vector_norm'] = np.ones(int(header['Cols']))
 parametros['titulo_str'] = '%02d' % (1)
 parametros['texto1'] = ''
 parametros['texto2'] = ''
-parametros['ini_file'] = 000000
-parametros['fin_file'] = []
+parametros['tiempo_ini'] = '2017-11-17 15:30:00'
+parametros['tiempo_fin'] = '2017-11-18 12:00:00'
 parametros['c_axis_min'] = 0
-parametros['c_axis_max'] = 0.08
+parametros['c_axis_max'] = 0.2
 parametros['zoom_i_m'] = 0
-parametros['zoom_f_m'] = 3000
+parametros['zoom_f_m'] = 7000
 parametros['marcadores_m'] = np.array([1000, 2000, 3000])
 parametros['marcadores_texto'] = ['V1', 'V2', 'V3']
 parametros['marcadores_waterfall'] = 'no'

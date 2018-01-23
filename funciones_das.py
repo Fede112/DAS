@@ -68,8 +68,8 @@ def peli_std(parametros):
     marcadores_waterfall: si uno quiere que los marcadores también aparezcan en el waterfall.
     marcadores_color: lista del mismo tamaño de marcadores_m con los colores que indican los punzados
     titulo_str: título del vdeo
-    vector_offset: array de numpy con el offset para la std de tamaño igual al número de columnas de la STD. 
-    vector_norm:  array de numpy con la normalización para la std de tamaño igual al número de columnas de la STD. 
+    vector_offset: array de numpy con el offset para la std de tamaño igual al número de columnas de la STD.
+    vector_norm:  array de numpy con la normalización para la std de tamaño igual al número de columnas de la STD.
     ini_file: número de inicio de archivo .std para la pelicula
     fin_file: número final de archivo .std para la pelicula. Si es vacío ([]) se hace hasta el último archivo .std.
     guarda_figuras: 'si' o 'no'
@@ -133,8 +133,10 @@ def peli_std(parametros):
     c = parametros['c']
     n = parametros['n']
     c_f = parametros['c_f']
-    ini_file = parametros['ini_file']
-    fin_file = parametros['fin_file']
+
+    tiempo_ini = parametros['tiempo_ini']
+    tiempo_fin = parametros['tiempo_fin']
+
     time_str = parametros['time_str']
     marcadores_m = parametros['marcadores_m']
     marcadores_waterfall = parametros['marcadores_waterfall']
@@ -142,12 +144,18 @@ def peli_std(parametros):
     marcadores_color = parametros['marcadores_color']
     offset_m = parametros['offset_m']
     carpeta_figuras = parametros['carpeta_figuras']
-    file_num = '%06d' % ini_file
-    path = os.path.join(time_str, 'STD', file_num + '.std')
+
+    # Lista los archivos del directorio y se queda con el .std mas grande
+    for file in sorted(os.listdir(os.path.join(parametros['time_str'], 'STD')), reverse=True):
+        print file
+        if file.endswith(".std"):
+            path = os.path.join(time_str, 'STD', file)
+            last_file = int(file[:-4])
+            break
     header_path = os.path.join(time_str, 'STD', 'std.hdr')
     direfig = os.path.join(time_str, 'STD', carpeta_figuras)
     filas = parametros['FilasPeli']
-    step = parametros['StepPeli']
+    step = float(parametros['StepPeli'])
     guarda_figuras = parametros['guarda_figuras']
     vector_offset = parametros['vector_offset']
     vector_norm = parametros['vector_norm']
@@ -162,15 +170,17 @@ def peli_std(parametros):
     delta_t = header['FreqRatio'] * 5e-9
     delta_x = c_f * delta_t / 2
     filas_0 = header['Fils']
+    nShotsChk = header['nShotsChk']
+
+    sec_per_fila = nShotsChk / FrecLaser
+    sec_per_file = filas_0 * sec_per_fila
+    print "sec_per_file %.2f" % sec_per_file
+    print "sec_per_fila %.2f" % sec_per_fila
 
     zoom_i = (zoom_i_m - offset_m) / delta_x
     zoom_f = (zoom_f_m - offset_m) / delta_x
 
     marcadores_bin = (marcadores_m - offset_m) / delta_x
-
-    # Busco errores en los parametros
-    if len(marcadores_m) != len(marcadores_color):
-        sys.exit(u'La cantidad de lineas verticales, [marcadores_m], no coincide con la cantidad de colores especificados, [marcadores_color], para dichas lineas.')
 
     if guarda_figuras == 'si':
         if (os.path.isdir(direfig) == 0):
@@ -186,44 +196,108 @@ def peli_std(parametros):
     minuto = time_str[12:14]
     seg = time_str[15:17]
 
-    time_str1 = ano + '-' + mes + '-' + dia + ' ' + hora + ':' + minuto + ':' + seg
-    tiempo_actual = datetime.datetime.strptime(time_str1, '%Y-%m-%d %H:%M:%S')
-    tiempo_actual = tiempo_actual + datetime.timedelta(seconds=ini_file * header['Fils'] * header['nShotsChk'] / FrecLaser)
+    # este paso lo hace porque el programa guarda la carpeta como ano + dia + mes en lugar de ano + mes + dia
+    tiempo_0 = ano + '-' + mes + '-' + dia + ' ' + hora + ':' + minuto + ':' + seg
+    tiempo_0_date = datetime.datetime.strptime(tiempo_0, '%Y-%m-%d %H:%M:%S')
+
+    if tiempo_ini == '':
+        tiempo_ini_date = tiempo_0_date
+    else:
+        tiempo_ini_date = datetime.datetime.strptime(tiempo_ini, '%Y-%m-%d %H:%M:%S')
+
+    if tiempo_fin == '':
+        # le agrego a tiempo_0_date la cantidad de archivos*sec_per_file. Le resto 1 segundo para que no se pase.
+        tiempo_fin_date = tiempo_0_date + datetime.timedelta(0, (last_file + 1.) * sec_per_file - 1)  # agrega segundos a datetime como: timedelta(days, seconds, then other fields).
+    else:
+        tiempo_fin_date = datetime.datetime.strptime(tiempo_fin, '%Y-%m-%d %H:%M:%S')
+
+    tiempo_actual = tiempo_ini_date
+
+    dif_time_date_ini = tiempo_ini_date - tiempo_0_date
+    dif_time_date_fin = tiempo_fin_date - tiempo_0_date
+    dif_time_date_ini_sec = dif_time_date_ini.total_seconds()
+    dif_time_date_fin_sec = dif_time_date_fin.total_seconds()
+
+    dif_time_sec = dif_time_date_fin_sec - dif_time_date_ini_sec
+
+    print 'dif_time_date_fin_sec: %.2f' % dif_time_date_fin_sec
+    print 'dif_time_date_ini_sec: %.2f' % dif_time_date_ini_sec
+    ini_file = int(dif_time_date_ini_sec / sec_per_file)
+    ini_fila = (dif_time_date_ini_sec % sec_per_file) / sec_per_fila
+    ini_fila = filas_0 - np.ceil((filas_0 - ini_fila) / step) * step  # redondeo para que ini_fila sea divisor entero de filas_0
+    fin_file = int(dif_time_date_fin_sec / sec_per_file)
+    fin_fila = (dif_time_date_fin_sec % sec_per_file) / sec_per_fila
+    if ini_file == fin_file:
+        fin_fila = ini_fila + np.ceil((fin_fila - ini_fila) / step)
+    else:
+        fin_fila = filas_0 - np.floor((filas_0 - fin_fila) / step) * step
+
+    print 'dif_time_sec: %.2f' % dif_time_sec
+    print 'dif_time_sec_from_files: %.2f' % ((float(fin_file-ini_file+1))*float(filas_0)*sec_per_fila)
+
+    print "ini_file: %.2f" % ini_file
+    print "fin_file: %.2f" % fin_file
+
+    print "ini_fila: %.2f" % ini_fila
+    print "fin_fila: %.2f" % fin_fila
+
+    # ERRORES en los parametros de entrada:
+
+    # StepPeli
+    if (filas_0 % step) != 0:
+        sys.exit(u'StepPeli debe ser divisor de la cantidad filas en un archivo: %.1f' % filas_0)
+
+    # marcadores
+    if len(marcadores_m) != len(marcadores_color):
+        sys.exit(u'La cantidad de lineas verticales, [marcadores_m], no coincide con la cantidad de colores especificados, [marcadores_color], para dichas lineas.')
+
+    # Verificaciones del tiempo inicial y final
+    if tiempo_fin_date <= tiempo_ini_date:
+        sys.exit(u'El tiempo final debe ser menor al tiempo inicial.')
+
+    if fin_file > last_file:
+        sys.exit(u'No existen datos hasta esa fecha final. \n Hay datos hasta:' + datetime.strftime(tiempo_0_date + datetime.timedelta(0, (last_file + 1.) * sec_per_file - 1), '%Y-%m-%d %H:%M:%S'))
+
+    if ini_file > last_file:
+        sys.exit(u'No existen datos a partir de esa fecha inicial.')
+
+    if dif_time_date_ini_sec < 0:
+        sys.exit(u'No existen datos anteriores a ' + time_str)
 
     vec_cols = np.array([0, header['Cols'] - 1], dtype=np.uint64)
     cols_to_read = vec_cols[1] - vec_cols[0] + 1
     columnas = int(cols_to_read)
 
-    data = np.zeros((filas, columnas), dtype=eval(header['PythonNpDataType']))
+    data = np.zeros((int(filas), columnas), dtype=eval(header['PythonNpDataType']))
     promedio = np.zeros(columnas, dtype=np.float32)
 
-    vec_fils = np.array([0, step - 1], dtype=np.uint64)
+    vec_fils = np.array([0, int(step) - 1], dtype=np.uint64)
     header, vector = data_read(header_path, path, vec_fils, vec_cols)
 
-    data[0:step:] = vector
+    data[0:int(step):] = vector
 
     def updatefig(j, offset_m, tiempo_actual):
         global pl1, pl2
 
-        ind_path = ini_file + j * step / filas_0  # numero del archivo
-        ind_path_str = '%06d' % (ind_path)  # lo pasa a string
-        path = os.path.join(time_str, 'STD', ind_path_str + '.std')
+        file_num = ini_file + j * step / filas_0  # numero del archivo
+        file_num_str = '%06d' % (file_num)  # lo paso a string
+        path = os.path.join(time_str, 'STD', file_num_str + '.std')
 
-        inicio = (j) * step % filas_0  # indice de la primer fila a leer en cada iteración
+        inicio = (j * step + ini_fila) % filas_0  # indice de la primer fila a leer en cada iteración
         vec_fils = np.array([inicio, inicio + step - 1], dtype=np.uint64)  # define el rango de filas a leer (lee el # de filas determinado en 'step')
 
         header, vector = data_read(header_path, path, vec_fils, vec_cols)  # lee los datos y los recupera en el vector 2d
 
-        for k in range(step):
+        for k in range(int(step)):
             vector[k, :] = (vector[k, :] - vector_offset) * vector_norm  # le resta el offset y le agrega una normalización
 
-        f = j % (filas / step)
+        f = j % (filas / step)  # resto de iteración / iteraciones en un waterfall completo
 
         data = root.data
         if (f == 0):
             data = np.zeros((filas, columnas), dtype=eval(header['PythonNpDataType']))
 
-        data[f * step:(f + 1) * step:] = vector  # va sumandole a data las filas (# = step) obtenidas en cada iteración
+        data[int(f * step):int((f + 1) * step):] = vector  # va sumandole a data las filas (# = step) obtenidas en cada iteración
         root.data = data
 
         # Actualización del Subplot Waterfall
@@ -237,8 +311,8 @@ def peli_std(parametros):
         ax.set_xlabel(u'Posición [m]')
         ax.set_ylabel('Tiempo [seg]')
 
-        j = j + 1
-        tiempo_actual = tiempo_actual + datetime.timedelta(seconds=j * step * header['nShotsChk'] / FrecLaser)
+        # j = j + 1  # no hace falta el + 1
+        tiempo_actual = tiempo_actual + datetime.timedelta(seconds=(j + 1) * step * header['nShotsChk'] / FrecLaser)
         time_str1 = datetime.datetime.strftime(tiempo_actual, '%Y-%m-%d %H:%M:%S')
 
         tiempo_label.set_text(time_str1)
@@ -246,7 +320,7 @@ def peli_std(parametros):
         promedio = root.promedio
 
         actual = np.mean(vector, axis=0)
-        promedio = (promedio * (j - 1) + actual) / j
+        promedio = (promedio * (j) + actual) / (j + 1)
 
         root.promedio = promedio
 
@@ -270,7 +344,7 @@ def peli_std(parametros):
             if marcadores_waterfall == 'si':
                 ax.axvline(x=marcadores_bin[k], color=marcadores_color[k])
 
-        inttostr = '%05d' % (j)
+        inttostr = '%05d' % (j + 1)
 
         if guarda_figuras == 'si':
             figname = direfig + "figura_" + inttostr
@@ -280,7 +354,7 @@ def peli_std(parametros):
             ani.event_source.stop()
             plt.close('all')
 
-        print '%2.2f' % (float(j) / float(frames_tot) * 100.), ' %'
+        print '%2.2f' % (float(j + 1) / float(frames_tot) * 100.), ' %'
 
     #    ax2.cla()
     #    pl2 = ax2.plot(actual-promedio)
@@ -341,24 +415,36 @@ def peli_std(parametros):
     # ax2.set_xlim([0,columnas])
     # ax2.set_ylim([-0.001,0.001])
 
-    i = ini_file
-    total_filas = 0
-    header_i = header_read(header_path, path)
-    if not fin_file:
-        while (1):
-            file_num = '%06d' % (i)
-            path = os.path.join(time_str, 'STD', file_num + '.std')
-            if (os.path.isfile(path)):
-                header_i = header_read(header_path, path)
-                total_filas += header_i['Fils']
-            else:
-                break
-            i = i + 1
-    else:
-        total_filas = header_i['Fils'] * (fin_file - ini_file + 1)
+    # i = ini_file
+    # total_filas = 0
+    # header_i = header_read(header_path, path)
+    # if not fin_file:
+    #     while (1):
+    #         file_num = '%06d' % (i)
+    #         path = os.path.join(time_str, 'STD', file_num + '.std')
+    #         if (os.path.isfile(path)):
+    #             header_i = header_read(header_path, path)
+    #             total_filas += header_i['Fils']
+    #         else:
+    #             break
+    #         i = i + 1
+    # else:
+    #     total_filas = header_i['Fils'] * (fin_file - ini_file + 1)
 
-    frames_tot = int(total_filas / step - 1)
+    # frames_tot = int(total_filas / step - 1)
 
+    frames_tot = int((((fin_file - ini_file + 1) * filas_0 - (ini_fila) - (filas_0 - fin_fila)) / step) )
+    # frames_tot = int((fin_file - ini_file) * filas_0)
+
+    print "frames_tot: %.2f" % frames_tot
+    print "filas: %.2f" % filas  # filas peli
+    print "filas_0: %.2f" % filas_0  # filas por archivo
+    print "filas inicial:  %.2f" % ini_fila
+    print "filas final:  %.2f" % fin_fila
+    print "frames total:  %.2f" % frames_tot
+    print tiempo_ini
+    print tiempo_fin
+    print "total time: %.2f" % (frames_tot * step * sec_per_fila / 60.)
     ani = animation.FuncAnimation(fig, updatefig, interval=0.2, blit=False, fargs=(offset_m, tiempo_actual), frames=frames_tot, repeat=False)
     ani.save(output_movie, writer=writer, dpi=250)
     # plt.show()
@@ -461,6 +547,7 @@ def carga_std(parametros):
     minuto = time_str[12:14]
     seg = time_str[15:17]
 
+    # los files se guardan como ano+dia+mes => reacomodo el string para que sea compatible con datetime
     tiempo_0 = ano + '-' + mes + '-' + dia + ' ' + hora + ':' + minuto + ':' + seg
     tiempo_0_date = datetime.datetime.strptime(tiempo_0, '%Y-%m-%d %H:%M:%S')
 
@@ -472,8 +559,8 @@ def carga_std(parametros):
     dif_time_date_ini_sec = dif_time_date_ini.total_seconds()
     dif_time_date_fin_sec = dif_time_date_fin.total_seconds()
 
-    dif_time = dif_time_date_fin - dif_time_date_ini
-    dif_time_sec = dif_time.total_seconds()
+    # dif_time = dif_time_date_fin - dif_time_date_ini
+    dif_time_sec = dif_time_date_fin_sec - dif_time_date_ini_sec
 
     nombre_header = os.path.join(time_str, 'STD', 'std.hdr')
     nombre_archivo = os.path.join(time_str, 'STD', '000000.std')
@@ -485,9 +572,9 @@ def carga_std(parametros):
     sec_per_file = filas * sec_per_fila
 
     ini_file = int(dif_time_date_ini_sec / sec_per_file)
-    ini_fila = dif_time_date_ini_sec % sec_per_file / sec_per_fila
+    ini_fila = (dif_time_date_ini_sec % sec_per_file) / sec_per_fila
     fin_file = int(dif_time_date_fin_sec / sec_per_file)
-    fin_fila = dif_time_date_fin_sec % sec_per_file / sec_per_fila
+    fin_fila = (dif_time_date_fin_sec % sec_per_file) / sec_per_fila
 
     filas_tot = int(dif_time_sec / sec_per_fila)
     cols = int(header['Cols'])
