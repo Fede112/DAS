@@ -1081,3 +1081,164 @@ def procesa_std_fft(parametros):
         fig2.savefig(figname, dpi=300)
 
     return std, data_fft_tot, pos_bin_std, tiempo_filas_std, frq, pos_bin_fft,
+
+
+def carga_matriz_std(parametros):
+    '''
+    Esta función carga la matriz STD (filas=tiempo, col=bines) de los archivos procesados .std del equipo de medición DAS.
+    Aparte genera un grafico de los datos que guarda en un directorio nuevo llamado 'Figuras'.
+
+    Parameters
+    ----------
+    time_str: carpeta donde se guarda la adquisición en formato: yy_dd_mm_HH_MM_SS
+    c: velocidad de la luz en el vacio
+    n: índice de refracción en la fibra
+    c_f: velocidad de la luz efectiva (en la fibra)
+    offset_m: offset en metros utilizado para la puesta en profundidad/distancia. Utilizado de manera que el cero coincida con la boca de pozo.
+    FrecLaser: frecuencia del láser en Hz.
+    zoom_i_m: posición en metros de inicio del video
+    zoom_f_m: posición en metros del final del video
+    tiempo_ini: inicio de la carga en formato 'yyyy-mm-dd HH:MM:SS'
+    tiempo_fin: fin de la carga en formato 'yyyy-mm-dd HH:MM:SS'
+
+
+    Output
+    ------
+    matriz: matriz STD. El número de columnas es el de toda la STD. El número de filas, el correspondiente entre los tiempo_ini y tiempo_fin
+    tiempo_filas_std: lista con los tiempos correspondientes a cada fila. El tamaño de la lista es igual al número de filas de la matriz.
+    pos_bin: numpy array con la posición en metros correspondiente a cada bin. El tamaño del vector es igual al número de columnas de la matriz.
+
+
+    Example
+    -------
+    from funciones_das import carga_matriz_std
+    from funciones4 import header_read
+    from funciones4 import data_read
+    import numpy as np
+
+
+    parametros = {}
+    parametros['time_str'] = '17_30_11_10_59_49'
+    nombre_header = os.path.join(parametros['time_str'], 'STD', 'std.hdr')
+    nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')
+    header = header_read(nombre_header,nombre_archivo)
+    parametros['c'] = 299792458.
+    parametros['n'] = 1.46879964
+    parametros['offset_m'] = 0
+    parametros['FrecLaser'] = 2000
+    parametros['c_f'] = parametros['c']/parametros['n']
+    parametros['zoom_i_m'] = 5300
+    parametros['zoom_f_m'] = 5600
+    parametros['tiempo_ini'] = '2017-11-30 11:12:30'
+    parametros['tiempo_fin'] = '2017-11-30 11:13:00'
+
+
+    matriz, tiempo_filas_std, pos_bin,  = carga_matriz_std(parametros)
+
+    '''
+
+    time_str = parametros['time_str']
+    FrecLaser = parametros['FrecLaser']
+    tiempo_ini = parametros['tiempo_ini']
+    tiempo_fin = parametros['tiempo_fin']
+
+    # Cargo parametros para graficar
+    zoom_i_m = parametros['zoom_i_m']
+    zoom_f_m = parametros['zoom_f_m']
+    c = parametros['c']
+    n = parametros['n']
+    c_f = parametros['c_f']
+    offset_m = parametros['offset_m']
+
+    ano = time_str[0:2]
+    ano = '20' + ano
+
+    dia = time_str[3:5]
+    mes = time_str[6:8]
+
+    hora = time_str[9:11]
+    minuto = time_str[12:14]
+    seg = time_str[15:17]
+
+    tiempo_0 = ano + '-' + mes + '-' + dia + ' ' + hora + ':' + minuto + ':' + seg
+    tiempo_0_date = datetime.datetime.strptime(tiempo_0, '%Y-%m-%d %H:%M:%S')
+
+    tiempo_ini_date = datetime.datetime.strptime(tiempo_ini, '%Y-%m-%d %H:%M:%S')
+    tiempo_fin_date = datetime.datetime.strptime(tiempo_fin, '%Y-%m-%d %H:%M:%S')
+
+    dif_time_date_ini = tiempo_ini_date - tiempo_0_date
+    dif_time_date_fin = tiempo_fin_date - tiempo_0_date
+    dif_time_date_ini_sec = dif_time_date_ini.total_seconds()
+    dif_time_date_fin_sec = dif_time_date_fin.total_seconds()
+
+    dif_time = dif_time_date_fin - dif_time_date_ini
+    dif_time_sec = dif_time.total_seconds()
+
+    nombre_header = os.path.join(time_str, 'STD', 'std.hdr')
+    nombre_archivo = os.path.join(time_str, 'STD', '000000.std')
+    header = header_read(nombre_header, nombre_archivo)
+
+    nShotsChk = header['nShotsChk']
+    sec_per_fila = nShotsChk / FrecLaser
+    filas = header['Fils']
+    sec_per_file = filas * sec_per_fila
+
+    ini_file = int(dif_time_date_ini_sec / sec_per_file)
+    ini_fila = int(dif_time_date_ini_sec % sec_per_file / sec_per_fila)
+    fin_file = int(dif_time_date_fin_sec / sec_per_file)
+    fin_fila = int(dif_time_date_fin_sec % sec_per_file / sec_per_fila)
+
+    filas_tot = int(dif_time_sec / sec_per_fila)
+
+    delta_t = header['FreqRatio'] * 5e-9
+    delta_x = c_f * delta_t / 2
+    zoom_i = int((zoom_i_m - offset_m) / delta_x)
+    zoom_f = int((zoom_f_m - offset_m) / delta_x)
+
+    matriz = np.zeros([filas_tot, zoom_f-zoom_i+1])
+    vec_cols = np.array([zoom_i, zoom_f], dtype=np.uint64)
+    ind_fila = 0
+    
+    j = 0
+    print 'Cargando STD: '
+    for i in range(ini_file, fin_file + 1):
+        file_num = '%06d' % i
+        #print file_num
+        path = os.path.join(time_str, 'STD', file_num + '.std')
+        header = header_read(nombre_header, path)
+
+        if (ini_file == fin_file):
+            vec_fils = np.array([ini_fila, fin_fila - 1])
+        else:
+            if (i == ini_file):
+                vec_fils = np.array([ini_fila, header['Fils'] - 1])
+            elif (i == fin_file):
+                vec_fils = np.array([0, fin_fila - 1])
+            else:
+                vec_fils = np.array([0, header['Fils'] - 1])
+
+        header, vector = data_read(nombre_header, path, vec_fils, vec_cols)
+
+        fila = vector.shape[0]
+
+        matriz[ind_fila:ind_fila + fila, :] = vector
+        ind_fila = ind_fila + fila
+
+        j = j + 1
+        if (j/10. == j/10):
+            print '%2.2f' % (float(j) / float(fin_file-ini_file) * 100.), ' %'
+
+
+    # Posicion de los bines
+    bines = np.linspace(zoom_i, zoom_f, num=zoom_f-zoom_i+1)
+    pos_bin = bines * delta_x + float(offset_m)
+
+    # Filas tiempo
+    tiempo_filas_std = []
+    tiempo_inii = datetime.datetime.strptime(tiempo_ini, '%Y-%m-%d %H:%M:%S')
+    for i in range(filas_tot):
+        tt = tiempo_inii + datetime.timedelta(seconds=i * header['nShotsChk'] / FrecLaser)
+        tiempo_filas_std.append(tt)
+
+    return matriz, tiempo_filas_std, pos_bin,
+

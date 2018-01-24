@@ -134,3 +134,31 @@ parametros['guarda_figuras'] = 'no'
 parametros['carpeta_figuras'] = 'Figuras'
 
 peli_std(parametros)
+
+
+###########################
+# carta_matriz_std: carga la matriz STD (filas=tiempo, col=bines)
+# Verificar FrecLaser.
+
+from funciones_das import carga_matriz_std
+from funciones4 import header_read
+from funciones4 import data_read
+import numpy as np
+
+
+parametros = {}
+parametros['time_str'] = '17_30_11_10_59_49'
+nombre_header = os.path.join(parametros['time_str'], 'STD', 'std.hdr')
+nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')
+header = header_read(nombre_header, nombre_archivo)
+parametros['c'] = 299792458.
+parametros['n'] = 1.46879964
+parametros['offset_m'] = 0
+parametros['FrecLaser'] = 2000
+parametros['c_f'] = parametros['c'] / parametros['n']
+parametros['zoom_i_m'] = 5300
+parametros['zoom_f_m'] = 5600
+parametros['tiempo_ini'] = '2017-11-30 11:12:30'
+parametros['tiempo_fin'] = '2017-11-30 11:13:00'
+
+matriz, tiempo_filas_std, pos_bin, = carga_matriz_std(parametros)
