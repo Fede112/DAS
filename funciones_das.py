@@ -233,7 +233,7 @@ def peli_std(parametros):
         fin_fila = filas_0 - np.floor((filas_0 - fin_fila) / step) * step
 
     print 'dif_time_sec: %.2f' % dif_time_sec
-    print 'dif_time_sec_from_files: %.2f' % ((float(fin_file-ini_file+1))*float(filas_0)*sec_per_fila)
+    print 'dif_time_sec_from_files: %.2f' % ((float(fin_file - ini_file + 1)) * float(filas_0) * sec_per_fila)
 
     print "ini_file: %.2f" % ini_file
     print "fin_file: %.2f" % fin_file
@@ -256,13 +256,13 @@ def peli_std(parametros):
         sys.exit(u'El tiempo final debe ser menor al tiempo inicial.')
 
     if fin_file > last_file:
-        sys.exit(u'No existen datos hasta esa fecha final. \n Hay datos hasta:' + datetime.strftime(tiempo_0_date + datetime.timedelta(0, (last_file + 1.) * sec_per_file - 1), '%Y-%m-%d %H:%M:%S'))
+        sys.exit(u'No existen datos hasta esa fecha final. Hay datos hasta el' + datetime.datetime.strftime(tiempo_0_date + datetime.timedelta(0, (last_file + 1.) * sec_per_file - 1), '%Y-%m-%d %H:%M:%S'))
 
     if ini_file > last_file:
-        sys.exit(u'No existen datos a partir de esa fecha inicial.')
+        sys.exit(u'Fecha inicial es mayor a fecha final.')
 
     if dif_time_date_ini_sec < 0:
-        sys.exit(u'No existen datos anteriores a ' + time_str)
+        sys.exit(u'No existen datos anteriores a el: ' + datetime.datetime.strftime(tiempo_0_date, '%Y-%m-%d %H:%M:%S'))
 
     vec_cols = np.array([0, header['Cols'] - 1], dtype=np.uint64)
     cols_to_read = vec_cols[1] - vec_cols[0] + 1
@@ -433,7 +433,7 @@ def peli_std(parametros):
 
     # frames_tot = int(total_filas / step - 1)
 
-    frames_tot = int((((fin_file - ini_file + 1) * filas_0 - (ini_fila) - (filas_0 - fin_fila)) / step) )
+    frames_tot = int((((fin_file - ini_file + 1) * filas_0 - (ini_fila) - (filas_0 - fin_fila)) / step))
     # frames_tot = int((fin_file - ini_file) * filas_0)
 
     print "frames_tot: %.2f" % frames_tot
