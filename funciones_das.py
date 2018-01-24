@@ -82,6 +82,7 @@ def peli_std(parametros):
 
     Example
     -------
+
     from funciones_das import peli_std
     from funciones4 import header_read
     from funciones4 import data_read
@@ -90,16 +91,16 @@ def peli_std(parametros):
 
 
     parametros = {}
-    parametros['time_str'] = '17_22_11_12_04_36'
+    parametros['time_str'] = '17_17_11_15_29_20'
     nombre_header = os.path.join(parametros['time_str'], 'STD', 'std.hdr')
-    nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')
+    nombre_archivo = os.path.join(parametros['time_str'], 'STD', '000000.std')  # De no tener el 000000.std poner el archivo .std inicial que se tenga.
     header = header_read(nombre_header, nombre_archivo)
     parametros['carpeta'] = ''
     parametros['output_movie'] = os.path.join(parametros['carpeta'], parametros['time_str'], 'STD', 'peli2.mp4')
     parametros['c'] = 299792458.
     parametros['n'] = 1.46879964
-    parametros['offset_m'] = -0
-    parametros['FrecLaser'] = 5000
+    parametros['offset_m'] = 0
+    parametros['FrecLaser'] = 2000
     parametros['FilasPeli'] = 2000
     parametros['StepPeli'] = 50
     parametros['c_f'] = parametros['c'] / parametros['n']
@@ -108,12 +109,12 @@ def peli_std(parametros):
     parametros['titulo_str'] = '%02d' % (1)
     parametros['texto1'] = ''
     parametros['texto2'] = ''
-    parametros['ini_file'] = 000000
-    parametros['fin_file'] = []
+    parametros['tiempo_ini'] = '2017-11-17 15:30:00'
+    parametros['tiempo_fin'] = '2017-11-18 12:00:00'
     parametros['c_axis_min'] = 0
-    parametros['c_axis_max'] = 0.08
+    parametros['c_axis_max'] = 0.2
     parametros['zoom_i_m'] = 0
-    parametros['zoom_f_m'] = 13000
+    parametros['zoom_f_m'] = 7000
     parametros['marcadores_m'] = np.array([1000, 2000, 3000])
     parametros['marcadores_texto'] = ['V1', 'V2', 'V3']
     parametros['marcadores_waterfall'] = 'no'
@@ -149,9 +150,17 @@ def peli_std(parametros):
     for file in sorted(os.listdir(os.path.join(parametros['time_str'], 'STD')), reverse=True):
         print file
         if file.endswith(".std"):
-            path = os.path.join(time_str, 'STD', file)
+            #path = os.path.join(time_str, 'STD', file)
             last_file = int(file[:-4])
             break
+
+    # Lista los archivos del directorio y se queda con el .std mas chico (eg. 000000.std)
+    for file in sorted(os.listdir(os.path.join(parametros['time_str'], 'STD')), reverse=False):
+        print file
+        if file.endswith(".std"):
+            path = os.path.join(time_str, 'STD', file)
+            break
+
     header_path = os.path.join(time_str, 'STD', 'std.hdr')
     direfig = os.path.join(time_str, 'STD', carpeta_figuras)
     filas = parametros['FilasPeli']
@@ -253,13 +262,10 @@ def peli_std(parametros):
 
     # Verificaciones del tiempo inicial y final
     if tiempo_fin_date <= tiempo_ini_date:
-        sys.exit(u'El tiempo final debe ser menor al tiempo inicial.')
+        sys.exit(u'El tiempo inicial debe ser menor al tiempo final.')
 
     if fin_file > last_file:
-        sys.exit(u'No existen datos hasta esa fecha final. Hay datos hasta el' + datetime.datetime.strftime(tiempo_0_date + datetime.timedelta(0, (last_file + 1.) * sec_per_file - 1), '%Y-%m-%d %H:%M:%S'))
-
-    if ini_file > last_file:
-        sys.exit(u'Fecha inicial es mayor a fecha final.')
+        sys.exit(u'No existen datos hasta esa fecha final. Hay datos hasta el ' + datetime.datetime.strftime(tiempo_0_date + datetime.timedelta(0, (last_file + 1.) * sec_per_file - 1), '%Y-%m-%d %H:%M:%S'))
 
     if dif_time_date_ini_sec < 0:
         sys.exit(u'No existen datos anteriores a el: ' + datetime.datetime.strftime(tiempo_0_date, '%Y-%m-%d %H:%M:%S'))
