@@ -150,7 +150,7 @@ def peli_std(parametros):
     for file in sorted(os.listdir(os.path.join(parametros['time_str'], 'STD')), reverse=True):
         print file
         if file.endswith(".std"):
-            #path = os.path.join(time_str, 'STD', file)
+            path_last_file = os.path.join(time_str, 'STD', file)
             last_file = int(file[:-4])
             break
 
@@ -158,7 +158,7 @@ def peli_std(parametros):
     for file in sorted(os.listdir(os.path.join(parametros['time_str'], 'STD')), reverse=False):
         print file
         if file.endswith(".std"):
-            path = os.path.join(time_str, 'STD', file)
+            path_first_file = os.path.join(time_str, 'STD', file)
             break
 
     header_path = os.path.join(time_str, 'STD', 'std.hdr')
@@ -175,9 +175,16 @@ def peli_std(parametros):
     output_movie = parametros['output_movie']
     titulo_str = parametros['titulo_str']
 
-    header = header_read(header_path, path)
+    
+    # Abro el header tomando el last_file para ver su tamano en filas
+    header = header_read(header_path, path_last_file)
     delta_t = header['FreqRatio'] * 5e-9
     delta_x = c_f * delta_t / 2
+    filas_last_file = header['Fils']
+
+
+    # Abro el header tomando el first_file para ver como se ve un archivo completo
+    header = header_read(header_path, path_first_file)
     filas_0 = header['Fils']
     nShotsChk = header['nShotsChk']
 
@@ -216,7 +223,7 @@ def peli_std(parametros):
 
     if tiempo_fin == '':
         # le agrego a tiempo_0_date la cantidad de archivos*sec_per_file. Le resto 1 segundo para que no se pase.
-        tiempo_fin_date = tiempo_0_date + datetime.timedelta(0, (last_file + 1.) * sec_per_file - 1)  # agrega segundos a datetime como: timedelta(days, seconds, then other fields).
+        tiempo_fin_date = tiempo_0_date + datetime.timedelta(0, (last_file) * sec_per_file + filas_last_file*sec_per_fila - 1)  # agrega segundos a datetime como: timedelta(days, seconds, then other fields).
     else:
         tiempo_fin_date = datetime.datetime.strptime(tiempo_fin, '%Y-%m-%d %H:%M:%S')
 
@@ -250,6 +257,8 @@ def peli_std(parametros):
     print "ini_fila: %.2f" % ini_fila
     print "fin_fila: %.2f" % fin_fila
 
+    print 'fecha final total: ' + datetime.datetime.strftime(tiempo_0_date + datetime.timedelta(0, last_file * sec_per_file + filas_last_file * sec_per_fila - 1), '%Y-%m-%d %H:%M:%S')
+
     # ERRORES en los parametros de entrada:
 
     # StepPeli
@@ -270,6 +279,7 @@ def peli_std(parametros):
     if dif_time_date_ini_sec < 0:
         sys.exit(u'No existen datos anteriores a el: ' + datetime.datetime.strftime(tiempo_0_date, '%Y-%m-%d %H:%M:%S'))
 
+
     vec_cols = np.array([0, header['Cols'] - 1], dtype=np.uint64)
     cols_to_read = vec_cols[1] - vec_cols[0] + 1
     columnas = int(cols_to_read)
@@ -278,14 +288,14 @@ def peli_std(parametros):
     promedio = np.zeros(columnas, dtype=np.float32)
 
     vec_fils = np.array([0, int(step) - 1], dtype=np.uint64)
-    header, vector = data_read(header_path, path, vec_fils, vec_cols)
+    header, vector = data_read(header_path, path_first_file, vec_fils, vec_cols)
 
     data[0:int(step):] = vector
 
     def updatefig(j, offset_m, tiempo_actual):
         global pl1, pl2
 
-        file_num = ini_file + j * step / filas_0  # numero del archivo
+        file_num = ini_file + (ini_fila + j * step) / filas_0  # numero del archivo
         file_num_str = '%06d' % (file_num)  # lo paso a string
         path = os.path.join(time_str, 'STD', file_num_str + '.std')
 
