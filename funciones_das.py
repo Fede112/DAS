@@ -68,10 +68,10 @@ def peli_std(parametros):
     marcadores_waterfall: si uno quiere que los marcadores también aparezcan en el waterfall.
     marcadores_color: lista del mismo tamaño de marcadores_m con los colores que indican los punzados
     titulo_str: título del vdeo
+    tiempo_ini: inicio de la carga en formato 'yyyy-mm-dd HH:MM:SS'
+    tiempo_fin: fin de la carga en formato 'yyyy-mm-dd HH:MM:SS'
     vector_offset: array de numpy con el offset para la std de tamaño igual al número de columnas de la STD.
     vector_norm:  array de numpy con la normalización para la std de tamaño igual al número de columnas de la STD.
-    ini_file: número de inicio de archivo .std para la pelicula
-    fin_file: número final de archivo .std para la pelicula. Si es vacío ([]) se hace hasta el último archivo .std.
     guarda_figuras: 'si' o 'no'
     carpeta_figuras: Carpeta que se crea dentro de la carpeta STD donde se guardan la figuras. Si la carpeta no existe, se crea.
     output_movie: path donde se guarda el video. El nombre del video debe tener la extensión .mp4
@@ -106,7 +106,7 @@ def peli_std(parametros):
     parametros['c_f'] = parametros['c'] / parametros['n']
     parametros['vector_offset'] = np.zeros(int(header['Cols']))
     parametros['vector_norm'] = np.ones(int(header['Cols']))
-    parametros['titulo_str'] = '%02d' % (1)
+    parametros['titulo_str'] = '%02d' % (Titulo)
     parametros['texto1'] = ''
     parametros['texto2'] = ''
     parametros['tiempo_ini'] = '2017-11-17 15:30:00'
@@ -175,13 +175,11 @@ def peli_std(parametros):
     output_movie = parametros['output_movie']
     titulo_str = parametros['titulo_str']
 
-    
     # Abro el header tomando el last_file para ver su tamano en filas
     header = header_read(header_path, path_last_file)
     delta_t = header['FreqRatio'] * 5e-9
     delta_x = c_f * delta_t / 2
     filas_last_file = header['Fils']
-
 
     # Abro el header tomando el first_file para ver como se ve un archivo completo
     header = header_read(header_path, path_first_file)
@@ -223,7 +221,7 @@ def peli_std(parametros):
 
     if tiempo_fin == '':
         # le agrego a tiempo_0_date la cantidad de archivos*sec_per_file. Le resto 1 segundo para que no se pase.
-        tiempo_fin_date = tiempo_0_date + datetime.timedelta(0, (last_file) * sec_per_file + filas_last_file*sec_per_fila - 1)  # agrega segundos a datetime como: timedelta(days, seconds, then other fields).
+        tiempo_fin_date = tiempo_0_date + datetime.timedelta(0, (last_file) * sec_per_file + filas_last_file * sec_per_fila - 1)  # agrega segundos a datetime como: timedelta(days, seconds, then other fields).
     else:
         tiempo_fin_date = datetime.datetime.strptime(tiempo_fin, '%Y-%m-%d %H:%M:%S')
 
@@ -240,13 +238,12 @@ def peli_std(parametros):
     print 'dif_time_date_ini_sec: %.2f' % dif_time_date_ini_sec
     ini_file = int(dif_time_date_ini_sec / sec_per_file)
     ini_fila = (dif_time_date_ini_sec % sec_per_file) / sec_per_fila
+    # Hago que ini_fila sea multiplo del step
     ini_fila = filas_0 - np.ceil((filas_0 - ini_fila) / step) * step  # redondeo para que ini_fila sea divisor entero de filas_0
     fin_file = int(dif_time_date_fin_sec / sec_per_file)
     fin_fila = (dif_time_date_fin_sec % sec_per_file) / sec_per_fila
-    if ini_file == fin_file:
-        fin_fila = ini_fila + np.ceil((fin_fila - ini_fila) / step)
-    else:
-        fin_fila = filas_0 - np.floor((filas_0 - fin_fila) / step) * step
+    # Hago que fin_fila sea multiplo del step
+    fin_fila = filas_0 - np.floor((filas_0 - fin_fila) / step) * step
 
     print 'dif_time_sec: %.2f' % dif_time_sec
     print 'dif_time_sec_from_files: %.2f' % ((float(fin_file - ini_file + 1)) * float(filas_0) * sec_per_fila)
@@ -278,7 +275,6 @@ def peli_std(parametros):
 
     if dif_time_date_ini_sec < 0:
         sys.exit(u'No existen datos anteriores a el: ' + datetime.datetime.strftime(tiempo_0_date, '%Y-%m-%d %H:%M:%S'))
-
 
     vec_cols = np.array([0, header['Cols'] - 1], dtype=np.uint64)
     cols_to_read = vec_cols[1] - vec_cols[0] + 1
@@ -1205,15 +1201,15 @@ def carga_matriz_std(parametros):
     zoom_i = int((zoom_i_m - offset_m) / delta_x)
     zoom_f = int((zoom_f_m - offset_m) / delta_x)
 
-    matriz = np.zeros([filas_tot, zoom_f-zoom_i+1])
+    matriz = np.zeros([filas_tot, zoom_f - zoom_i + 1])
     vec_cols = np.array([zoom_i, zoom_f], dtype=np.uint64)
     ind_fila = 0
-    
+
     j = 0
     print 'Cargando STD: '
     for i in range(ini_file, fin_file + 1):
         file_num = '%06d' % i
-        #print file_num
+        # print file_num
         path = os.path.join(time_str, 'STD', file_num + '.std')
         header = header_read(nombre_header, path)
 
@@ -1235,12 +1231,11 @@ def carga_matriz_std(parametros):
         ind_fila = ind_fila + fila
 
         j = j + 1
-        if (j/10. == j/10):
-            print '%2.2f' % (float(j) / float(fin_file-ini_file) * 100.), ' %'
-
+        if (j / 10. == j / 10):
+            print '%2.2f' % (float(j) / float(fin_file - ini_file) * 100.), ' %'
 
     # Posicion de los bines
-    bines = np.linspace(zoom_i, zoom_f, num=zoom_f-zoom_i+1)
+    bines = np.linspace(zoom_i, zoom_f, num=zoom_f - zoom_i + 1)
     pos_bin = bines * delta_x + float(offset_m)
 
     # Filas tiempo
@@ -1251,4 +1246,3 @@ def carga_matriz_std(parametros):
         tiempo_filas_std.append(tt)
 
     return matriz, tiempo_filas_std, pos_bin,
-
