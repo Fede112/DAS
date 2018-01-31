@@ -147,7 +147,7 @@ def peli_std(parametros):
     carpeta_figuras = parametros['carpeta_figuras']
 
     # Lista los archivos del directorio y se queda con el .std mas grande
-    for file in sorted(os.listdir(os.path.join(parametros['time_str'], 'STD')), reverse=True):
+    for file in sorted(os.listdir(os.path.join(time_str, 'STD')), reverse=True):
         print file
         if file.endswith(".std"):
             path_last_file = os.path.join(time_str, 'STD', file)
@@ -155,7 +155,7 @@ def peli_std(parametros):
             break
 
     # Lista los archivos del directorio y se queda con el .std mas chico (eg. 000000.std)
-    for file in sorted(os.listdir(os.path.join(parametros['time_str'], 'STD')), reverse=False):
+    for file in sorted(os.listdir(os.path.join(time_str, 'STD')), reverse=False):
         print file
         if file.endswith(".std"):
             path_first_file = os.path.join(time_str, 'STD', file)
@@ -1246,3 +1246,81 @@ def carga_matriz_std(parametros):
         tiempo_filas_std.append(tt)
 
     return matriz, tiempo_filas_std, pos_bin,
+
+
+def tiempo_datos(parametros):
+    '''
+    Funcion accesorio que te devuelve el tiempo inicial y final de los datos contenidos en la carpeta idinicada en parametros['time_str']
+    Parameters
+    ----------
+    time_str: carpeta donde se guarda la adquisición en formato: yy_dd_mm_HH_MM_SS
+    FrecLaser: frecuencia del láser en Hz.
+
+    Output
+    ------
+    Un array de strings donde la primera entrada es el tiempo inicial y la segunda el tiempo final.
+
+
+    Example
+    -------
+    from funciones_das import tiempo_datos
+    from funciones4 import header_read
+    from funciones4 import data_read
+    import numpy as np
+
+
+    parametros = {}
+    parametros['time_str'] = '17_15_12_14_40_29'
+    parametros['FrecLaser'] = 5000
+
+    tiempo_ini_str, tiempo_fin_str,  = tiempo_datos(parametros)
+    '''
+
+    FrecLaser = parametros['FrecLaser']
+    time_str = parametros['time_str']
+    ano = time_str[0:2]
+    ano = '20' + ano
+    dia = time_str[3:5]
+    mes = time_str[6:8]
+    hora = time_str[9:11]
+    minuto = time_str[12:14]
+    seg = time_str[15:17]
+
+    # Lista los archivos del directorio y se queda con el .std mas grande
+    for file in sorted(os.listdir(os.path.join(time_str, 'STD')), reverse=True):
+        if file.endswith(".std"):
+            path_last_file = os.path.join(time_str, 'STD', file)
+            last_file = int(file[:-4])
+            break
+
+    # Lista los archivos del directorio y se queda con el .std mas chico (eg. 000000.std)
+    for file in sorted(os.listdir(os.path.join(time_str, 'STD')), reverse=False):
+        if file.endswith(".std"):
+            path_first_file = os.path.join(time_str, 'STD', file)
+            first_file = int(file[:-4])
+            break
+
+    header_path = os.path.join(time_str, 'STD', 'std.hdr')
+    # Abro el header tomando el last_file para ver su tamano en filas
+    header = header_read(header_path, path_last_file)
+    delta_t = header['FreqRatio'] * 5e-9
+    filas_last_file = header['Fils']
+
+    # Abro el header tomando el first_file para ver como se ve un archivo completo
+    header = header_read(header_path, path_first_file)
+    filas_0 = header['Fils']
+    nShotsChk = header['nShotsChk']
+
+    sec_per_fila = nShotsChk / FrecLaser
+    sec_per_file = filas_0 * sec_per_fila
+
+    tiempo_0 = ano + '-' + mes + '-' + dia + ' ' + hora + ':' + minuto + ':' + seg
+    tiempo_0_date = datetime.datetime.strptime(tiempo_0, '%Y-%m-%d %H:%M:%S')
+    tiempo_ini_date = tiempo_0_date + datetime.timedelta(0, first_file * sec_per_file)
+    # le agrego a tiempo_0_date la cantidad de archivos*sec_per_file. Le resto 1 segundo para que no se pase.
+    tiempo_fin_date = tiempo_0_date + datetime.timedelta(0, last_file * sec_per_file + filas_last_file * sec_per_fila - 1)  # agrega segundos a datetime como: timedelta(days, seconds, then other fields).
+    tiempo_ini_date_str = datetime.datetime.strftime(tiempo_ini_date, '%Y-%m-%d %H:%M:%S')
+    tiempo_fin_date_str = datetime.datetime.strftime(tiempo_fin_date, '%Y-%m-%d %H:%M:%S')
+    print 'Tiempo inicial: ' + tiempo_ini_date_str
+    print 'Tiempo final: ' + tiempo_fin_date_str
+    return tiempo_ini_date_str, tiempo_fin_date_str
