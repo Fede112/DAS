@@ -106,7 +106,7 @@ def peli_std(parametros):
     parametros['c_f'] = parametros['c'] / parametros['n']
     parametros['vector_offset'] = np.zeros(int(header['Cols']))
     parametros['vector_norm'] = np.ones(int(header['Cols']))
-    parametros['titulo_str'] = '%02d' % (Titulo)
+    parametros['titulo_str'] = u'Título'
     parametros['texto1'] = ''
     parametros['texto2'] = ''
     parametros['tiempo_ini'] = '2017-11-17 15:30:00'
